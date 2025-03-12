@@ -1,7 +1,16 @@
 [package]
-name = "aws-grc"
+name = "aws-sso-util"
 version = "0.1.0"
 edition = "2024"
+authors = ["Alexandru Olaru <alxolr@gmail.com>"]
+description = "A utility for AWS SSO"
+license = "MIT"
+repository = "https://github.com/alxolr/aws-sso-util"
+homepage = "https://github.com/alxolr/aws-sso-util"
+documentation = "https://docs.rs/aws-sso-util"
+keywords = ["aws", "sso", "utility"]
+categories = ["command-line-utilities"]
+readme = "README.md"
 
 [dependencies]
 derive_more = { version = "2.0.1", features = ["from"] }

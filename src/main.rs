@@ -7,19 +7,31 @@ mod error;
 mod sso_cache;
 
 #[derive(structopt::StructOpt, Debug)]
+#[structopt(
+    name = "aws-sso-util",
+    bin_name = "aws-sso-util",
+    about = "AWS SSO utility"
+)]
 pub struct Opt {
-    #[structopt(short, long)]
+    #[structopt(short, long, help = "Fuzzy search for aws profiles")]
+    profile: bool,
+
+    #[structopt(short, long, help = "Get aws console url for the selected profile")]
     console_ui: bool,
 
-    #[structopt(short, long)]
+    #[structopt(
+        short,
+        long,
+        help = "Get the export env for aws credentials for the selected profile"
+    )]
     env: bool,
 }
 
 fn main() -> Result<()> {
     let opt = Opt::from_args();
-
-    if !opt.console_ui && !opt.env {
-        println!("Please select one of the options -c or -e");
+    if !opt.console_ui && !opt.env && !opt.profile {
+        println!("No options selected");
+        println!("Run with --help for more information");
         return Ok(());
     }
 

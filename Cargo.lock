@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aws-grc"
+name = "aws-sso-util"
 version = "0.1.0"
 dependencies = [
  "derive_more",
