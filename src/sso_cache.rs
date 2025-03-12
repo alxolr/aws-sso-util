@@ -21,26 +21,34 @@ pub struct RoleCredentials {
 #[serde(rename_all = "camelCase")]
 pub struct Storage {
     access_token: String,
+    start_url: String,
 }
 
-pub fn get_role_credentials(profile: &Profile) -> Result<Credenials> {
+pub fn get_load_storage() -> Result<Storage> {
     let aws_sso_cache_dir = dirs::home_dir()
         .expect("Unable to get home directory")
         .join(".aws")
         .join("sso")
         .join("cache");
 
-    // load the last file in the directory
+    let last_file = std::fs::read_dir(aws_sso_cache_dir)?
+        .flat_map(|entry| entry.map(|e| e.path()))
+        .filter(|path| path.is_file())
+        .max_by_key(|path| {
+            path.metadata()
+                .expect("Unable to get metadata")
+                .modified()
+                .expect("Unable to get modified time")
+        })
+        .expect("No cache file found");
 
-    let last_file = aws_sso_cache_dir
-        .read_dir()?
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.file_type().map(|ft| ft.is_file()).unwrap_or(false))
-        .max_by_key(|entry| entry.metadata().unwrap().modified().unwrap())
-        .expect("No files found in cache");
+    let storage: Storage = serde_json::from_str(&std::fs::read_to_string(last_file)?)?;
 
-    let storage: Storage = serde_json::from_str(&std::fs::read_to_string(last_file.path())?)?;
+    Ok(storage)
+}
 
+pub fn get_role_credentials(profile: &Profile) -> Result<Credenials> {
+    let storage = get_load_storage()?;
     let command = format!(
         "aws sso get-role-credentials --account-id {} --role-name {} --access-token {} --region {}",
         profile.sso_account_id, profile.sso_role_name, storage.access_token, profile.region
@@ -50,4 +58,12 @@ pub fn get_role_credentials(profile: &Profile) -> Result<Credenials> {
     let output: RoleCredentials = serde_json::from_slice(&output.stdout)?;
 
     Ok(output.role_credentials)
+}
+
+pub fn get_console_url(profile: &Profile) -> Result<String> {
+    let storage = get_load_storage()?;
+    Ok(format!(
+        "{}console?account_id={}&role_name={}&region={}",
+        storage.start_url, profile.sso_account_id, profile.sso_role_name, profile.region
+    ))
 }

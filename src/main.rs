@@ -4,13 +4,25 @@ use structopt::StructOpt;
 
 mod aws_profiles;
 mod error;
-mod role_credentials;
+mod sso_cache;
 
-#[derive(structopt::StructOpt)]
-pub struct Opt {}
+#[derive(structopt::StructOpt, Debug)]
+pub struct Opt {
+    #[structopt(short, long)]
+    console_ui: bool,
+
+    #[structopt(short, long)]
+    env: bool,
+}
 
 fn main() -> Result<()> {
-    let _ = Opt::from_args();
+    let opt = Opt::from_args();
+
+    if !opt.console_ui && !opt.env {
+        println!("Please select one of the options -c or -e");
+        return Ok(());
+    }
+
     let profiles = aws_profiles::get_profiles()?;
 
     let options = profiles
@@ -28,14 +40,20 @@ fn main() -> Result<()> {
         .find(|profile| profile.name == options[selection.unwrap()])
         .expect("Better select a profile");
 
-    let creadentials = role_credentials::get_role_credentials(profile)?;
+    if opt.console_ui {
+        let url = sso_cache::get_console_url(profile)?;
+        println!("{}", url);
+    }
 
-    println!("export AWS_ACCESS_KEY_ID={}", creadentials.access_key_id);
-    println!(
-        "export AWS_SECRET_ACCESS_KEY={}",
-        creadentials.secret_access_key
-    );
-    println!("export AWS_SESSION_TOKEN={}", creadentials.session_token);
+    if opt.env {
+        let creadentials = sso_cache::get_role_credentials(profile)?;
+        println!("export AWS_ACCESS_KEY_ID={}", creadentials.access_key_id);
+        println!(
+            "export AWS_SECRET_ACCESS_KEY={}",
+            creadentials.secret_access_key
+        );
+        println!("export AWS_SESSION_TOKEN={}", creadentials.session_token);
+    }
 
     Ok(())
 }
