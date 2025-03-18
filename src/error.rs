@@ -1,24 +1,20 @@
 use derive_more::From;
-use std::fmt::Display;
+use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, From)]
+#[derive(Debug, From, Error)]
 pub enum Error {
+    #[error("IO error: {0}")]
     Io(std::io::Error),
+    #[error("Serde error: {0}")]
     Serde(serde_json::Error),
-    String(std::string::String),
+    #[error("Key not found")]
+    KeyNotFound,
+    #[error("Value not found")]
+    ValueNotFound,
+    #[error("Dialoguer error: {0}")]
     Dialoguer(dialoguer::Error),
+    #[error("String error: {0}")]
+    Str(String),
 }
-
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Error::Io(err) => write!(f, "IO Error: {}", err),
-            Error::Serde(err) => write!(f, "Serde Error: {}", err),
-            Error::String(err) => write!(f, "String Error: {}", err),
-            Error::Dialoguer(err) => write!(f, "Dialoguer Error: {}", err),
-        }
-    }
-}
-impl std::error::Error for Error {}
